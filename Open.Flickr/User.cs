@@ -3,7 +3,7 @@
 namespace Open.Flickr
 {
     [DataContract]
-    public class UserResponse
+    public class UserResponse : IFlickrResponse
     {
         [DataMember(Name = "user", IsRequired = false)]
         public User User { get; set; }

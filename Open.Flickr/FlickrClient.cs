@@ -80,21 +80,8 @@ namespace Open.Flickr
 
         public async Task<User> GetUserInfoAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            var uri = BuildApiUri("flickr.test.login");
-            var client = CreateClient();
-            var response = await client.GetAsync(uri, cancellationToken);
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadJsonAsync<UserResponse>();
-                if (result.Stat == "ok")
-                    return result.User;
-                else
-                    throw new FlickrException(result.Code, result.Message);
-            }
-            else
-            {
-                throw await ProcessException(response.Content);
-            }
+            UserResponse response = await this.GetAsync<UserResponse>("flickr.test.login", parameters: null, cancellationToken: cancellationToken);
+            return response.User;
         }
 
         public async Task<Photo2> GetPhotoAsync(string photoId, CancellationToken cancellationToken = default(CancellationToken))
@@ -104,20 +91,8 @@ namespace Open.Flickr
                 { "photo_id", photoId },
             };
 
-            var uri = BuildApiUri("flickr.photos.getInfo", parameters: parameters);
-            var client = CreateClient();
-            var response = await client.GetAsync(uri, cancellationToken);
-            if (response.IsSuccessStatusCode)
-            {
-                PhotoResult result = await response.Content.ReadJsonAsync<PhotoResult>();
-
-                if (result.Stat == "ok")
-                {
-                    return result.Photo;
-                }
-            }
-
-            throw await ProcessException(response.Content);
+            PhotoResult response = await this.GetAsync<PhotoResult>("flickr.photos.getInfo", parameters: parameters, cancellationToken: cancellationToken);
+            return response.Photo;
         }
 
         public async Task<PhotoSizeCollection> GetPhotoSizesAsync(string photoId, CancellationToken cancellationToken = default(CancellationToken))
@@ -547,6 +522,30 @@ namespace Open.Flickr
         #endregion
 
         #region ** implementation
+
+        public async Task<TResponse> GetAsync<TResponse>(string apiMethod, Dictionary<string, string> parameters = null, CancellationToken cancellationToken = default(CancellationToken)) where TResponse : IFlickrResponse
+        {
+            var uri = BuildApiUri(apiMethod, mode: "GET", parameters: parameters);
+            var client = CreateClient();
+            var response = await client.GetAsync(uri, cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                TResponse result = await response.Content.ReadJsonAsync<TResponse>();
+
+                if (result.Stat == "ok")
+                {
+                    return result;
+                }
+                {
+                    throw new FlickrException(result.Code, result.Message);
+                }
+            }
+            else
+            {
+                throw await ProcessException(response.Content);
+            }
+        }
 
         private Uri BuildUploadApiUri(out string authorizationheader, Dictionary<string, string> parameters = null)
         {

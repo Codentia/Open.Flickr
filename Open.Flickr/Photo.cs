@@ -32,12 +32,16 @@ namespace Open.Flickr
     }
 
     [DataContract]
-    public class PhotoResult
+    public class PhotoResult : IFlickrResponse
     {
         [DataMember(Name = "photo", IsRequired = false)]
         public Photo2 Photo { get; set; }
         [DataMember(Name = "stat", IsRequired = false)]
         public string Stat { get; set; }
+
+        public int Code { get; set; }
+
+        public string Message { get; set; }
     }
 
     public class PhotoSizeResult
